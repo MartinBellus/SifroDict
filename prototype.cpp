@@ -6,9 +6,11 @@ class Node{
         map<char,Node*> children;
         Node* parent;
         char c;
-        Node(char ch,Node* p = nullptr){
+        int freq = 0;
+        Node(char ch,Node* p = nullptr,int f = 0){
             parent = p;
             c = ch;
+            freq = f;
         }
         Node* add_child(char ch){
             if(children.find(ch) == children.end()) children[ch] = new Node(ch,this);
@@ -22,12 +24,13 @@ class Trie{
         Trie(){
             root = new Node(':');
         }
-        void add_string(string s, Node* cur = nullptr){
+        void add_string(string s,int f, Node* cur = nullptr){
             if(find(s)) return;
             if(cur == nullptr) cur = root;
             for(int ind = 0;ind < s.size();ind++){
                 cur = cur->add_child(s[ind]);
             }
+            cur->freq += f;
         }
         bool find(string word){
             Node* cur = root;
@@ -39,9 +42,10 @@ class Trie{
             }
             return 0;
         }
-        void match_pattern(string pattern,vector<string>* out,int ind = 0,Node* cur = nullptr){
+        void match_pattern(string pattern,vector<pair<string,int>>* out,int ind = 0,Node* cur = nullptr){
             if(cur == nullptr) cur = root;
             if(cur->c == '$' && ind == pattern.size()){ //match
+                int f = cur->freq;
                 string ans = "";
                 cur = cur->parent;
                 while(cur->parent != nullptr){
@@ -49,7 +53,7 @@ class Trie{
                     cur = cur->parent;
                 }
                 reverse(ans.begin(),ans.end());
-                out->push_back(ans);
+                out->push_back({ans,f});
                 return;
             }
             if(ind == pattern.size()) return; //no match
@@ -79,21 +83,27 @@ class Trie{
 
 Trie tr = Trie();
 
+bool comp(pair<string,int> a,pair<string,int> b){
+    return a.second > b.second || (a.second == b.second && a.first > b.first);
+}
+
 void manual_inp(){
     char id;
     string co;
     while(1){
         cin>>id;
         if(id == '+'){
-            cin>>co;
+            int f;
+            cin>>co>>f;
             co += '$';
-            tr.add_string(co);
+            tr.add_string(co,f);
         }else if(id == '?'){
             cin>>co;
-            vector<string> ans;
+            vector<pair<string,int>> ans;
             co += '$';
             tr.match_pattern(co,&ans);
-            for(auto i : ans) cout<<i<<endl;
+            sort(ans.begin(),ans.end(),comp);
+            for(auto i : ans) cout<<i.first<<" "<<i.second<<endl;
         }else if(id == 'd') tr.print_words();
         else break;
     };
@@ -106,10 +116,12 @@ void load_wordlist(string file){
         cout<<"Can not open wordlist"<<endl;
         return;
     }
-    string word;
-    while(getline(wl,word)){
+    string line;
+    while(getline(wl,line)){
+        string word = line.substr(0,line.find(' '));
+        int freq = stoi(line.substr(line.find(' ') + 1,line.size() - 1 - word.size()));
         word += '$';
-        tr.add_string(word);
+        tr.add_string(word,freq);
     }
     wl.close();
 }
