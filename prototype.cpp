@@ -103,7 +103,7 @@ void manual_inp(){
             co += '$';
             tr.match_pattern(co,&ans);
             sort(ans.begin(),ans.end(),comp);
-            for(auto i : ans) cout<<i.first<<" "<<i.second<<endl;
+            for(auto i : ans) cout<<i.first<<endl;
         }else if(id == 'd') tr.print_words();
         else break;
     };
