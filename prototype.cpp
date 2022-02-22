@@ -79,6 +79,45 @@ class Trie{
             cur_str.pop_back();
             return;
         }
+        long long number_of_nodes(Node* nv = nullptr){
+            if(nv == nullptr) nv = root;
+            if(nv->children.size() == 0) return 1;
+            long long ans = 0;
+            for(auto it = nv->children.begin();it != nv->children.end();it++){
+                ans += number_of_nodes(it->second);
+            }
+            return ans;
+        }
+        void _serialize(ostream &os, Node* nv = nullptr){
+            if(nv == nullptr) nv = root;
+            os<<nv->c<<" ";
+            if(nv->c == '$') os<<nv->freq<<" ";
+            for(auto it = nv->children.begin();it != nv->children.end();it++){
+                _serialize(os,it->second);
+            }
+            os<<"# ";
+        }
+        void serialize(string out){
+            ofstream os(out);
+            _serialize(os);
+            os<<endl;
+            os.close();
+        }
+        void deserialize(string dump){
+            ifstream in(dump);
+            Node* nv = root;
+            char c;in>>c;
+            int freq;
+            while(nv != nullptr){
+                in>>c;
+                if(c == '#') nv = nv->parent;
+                else{
+                    nv = nv->add_child(c);
+                    if(c == '$'){in>>freq;nv->freq = freq;}
+                }
+            }
+            in.close();
+        }
 };
 
 Trie tr = Trie();
@@ -127,6 +166,9 @@ void load_wordlist(string file){
 }
 
 int main(){
-    load_wordlist("sk_parsed.txt");
+    //load_wordlist("sk_parsed.txt");
+    tr.deserialize("trie.dump");
+    //cout<<tr.number_of_nodes()<<endl;
+    //tr.serialize("trie.dump");
     manual_inp();
 }
