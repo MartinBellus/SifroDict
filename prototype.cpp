@@ -1,4 +1,10 @@
-#include<bits/stdc++.h>
+#include<vector>
+#include<string>
+#include<iostream>
+#include<algorithm>
+#include<map>
+#include<fstream>
+
 using namespace std;
 
 class Node{
@@ -42,7 +48,7 @@ class Trie{
             }
             return 0;
         }
-        void match_pattern(string pattern,vector<pair<string,int>>* out,int ind = 0,Node* cur = nullptr){
+        void match_pattern(string pattern,vector<pair<string,int>>& out,int ind = 0,Node* cur = nullptr){
             if(cur == nullptr) cur = root;
             if(cur->c == '$' && ind == pattern.size()){ //match
                 int f = cur->freq;
@@ -53,7 +59,7 @@ class Trie{
                     cur = cur->parent;
                 }
                 reverse(ans.begin(),ans.end());
-                out->push_back({ans,f});
+                out.push_back({ans,f});
                 return;
             }
             if(ind == pattern.size()) return; //no match
@@ -140,9 +146,18 @@ void manual_inp(){
             cin>>co;
             vector<pair<string,int>> ans;
             co += '$';
-            tr.match_pattern(co,&ans);
+            tr.match_pattern(co,ans);
             sort(ans.begin(),ans.end(),comp);
-            for(auto i : ans) cout<<i.first<<endl;
+            int ind = 0;
+            while(ind < ans.size()){
+                for(int cnt = 0;cnt <= 31 && ind < ans.size();cnt++,ind++){
+                    cout<<ans[ind].first<<endl;
+                }
+                if(ind == ans.size()) break;
+                cout<<"Show more results? [y/n] ";
+                string a;cin>>a;
+                if(a != "y" && a != "Y") break;
+            }
         }else if(id == 'd') tr.print_words();
         else break;
     };
