@@ -122,6 +122,7 @@ class Trie{
                     if(c == '$'){in>>freq;nv->freq = freq;}
                 }
             }
+            cout<<"Wordlist succesfully loaded!"<<endl;
             in.close();
         }
 };
