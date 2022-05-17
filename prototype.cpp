@@ -110,7 +110,15 @@ class Trie{
             os.close();
         }
         void deserialize(string dump){
-            ifstream in(dump);
+            ifstream in;
+            in.open(dump);
+            while(!in.is_open()){
+                cout<<"Could not open wordlist. Enter path to trie.dump file: ";
+                string path;
+                if(path == "q") return;
+                cin>>path;
+                in.open(path);
+            }
             Node* nv = root;
             char c;in>>c;
             int freq;
@@ -122,7 +130,7 @@ class Trie{
                     if(c == '$'){in>>freq;nv->freq = freq;}
                 }
             }
-            cout<<"Wordlist succesfully loaded!"<<endl;
+            cout<<"Wordlist loaded succesfully!"<<endl;
             in.close();
         }
 };
