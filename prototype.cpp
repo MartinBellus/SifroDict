@@ -4,141 +4,206 @@
 #include<algorithm>
 #include<map>
 #include<fstream>
+#include<chrono>
+
+//TODO
+//permutacie
+//lubovolny zo setu
+//cisla na n-nasobok zatvorky
 
 using namespace std;
 
-class Node{
-    public:
-        map<char,Node*> children;
-        Node* parent;
-        char c;
-        int freq = 0;
-        Node(char ch,Node* p = nullptr,int f = 0){
-            parent = p;
-            c = ch;
-            freq = f;
-        }
-        Node* add_child(char ch){
-            if(children.find(ch) == children.end()) children[ch] = new Node(ch,this);
-            return children[ch];
-        }
+map<char,char> matching{{'(',')'},{'{','}'},{'[',']'},{'<','>'}};
+
+struct Node{
+    map<char,Node*> children;
+    Node* parent;
+    char c;
+    int freq = 0;
+    int depth;
+    Node(char ch,Node* p = nullptr,int f = 0){
+        if(p == nullptr) depth = 0;
+        else depth = p->depth + 1;
+        parent = p;
+        c = ch;
+        freq = f;
+    }
+    Node* add_child(char ch){
+        if(children.find(ch) == children.end()) children[ch] = new Node(ch,this);
+        return children[ch];
+    }
 };
 
-class Trie{
-    public:
-        Node* root;
-        Trie(){
-            root = new Node(':');
+struct Trie{
+    Node* root;
+    Trie(){
+        root = new Node(':');
+    }
+    void add_string(string s,int f, Node* cur = nullptr){
+        if(find(s)) return;
+        if(cur == nullptr) cur = root;
+        for(int ind = 0;ind < s.size();ind++){
+            cur = cur->add_child(s[ind]);
         }
-        void add_string(string s,int f, Node* cur = nullptr){
-            if(find(s)) return;
-            if(cur == nullptr) cur = root;
-            for(int ind = 0;ind < s.size();ind++){
-                cur = cur->add_child(s[ind]);
-            }
-            cur->freq += f;
+        cur->freq += f;
+    }
+    bool find(string word){
+        Node* cur = root;
+        int ind = 0;
+        while(ind != word.size() || cur != nullptr){
+            if(cur->children.find(word[ind]) != cur->children.end()) cur = cur->children[word[ind++]];
+            else return 0;
+            if(cur->c == '$') return 1;
         }
-        bool find(string word){
-            Node* cur = root;
-            int ind = 0;
-            while(ind != word.size() || cur != nullptr){
-                if(cur->children.find(word[ind]) != cur->children.end()) cur = cur->children[word[ind++]];
-                else return 0;
-                if(cur->c == '$') return 1;
-            }
-            return 0;
-        }
-        void match_pattern(string pattern,vector<pair<string,int>>& out,int ind = 0,Node* cur = nullptr){
-            if(cur == nullptr) cur = root;
-            if(cur->c == '$' && ind == pattern.size()){ //match
-                int f = cur->freq;
-                string ans = "";
+        return 0;
+    }
+    void o_match_pattern(string pattern,vector<pair<string,int>>& out,int ind = 0,Node* cur = nullptr){
+        if(cur == nullptr) cur = root;
+        if(cur->c == '$' && ind == pattern.size()){ //match
+            int f = cur->freq;
+            string ans = "";
+            cur = cur->parent;
+            while(cur->parent != nullptr){
+                ans += cur->c;
                 cur = cur->parent;
-                while(cur->parent != nullptr){
-                    ans += cur->c;
-                    cur = cur->parent;
-                }
-                reverse(ans.begin(),ans.end());
-                out.push_back({ans,f});
-                return;
             }
-            if(ind == pattern.size()) return; //no match
-            if(pattern[ind] == '.'){ //resolve wildcard character
-                for(auto it = cur->children.begin();it != cur->children.end();it++){
-                    match_pattern(pattern,out,ind + 1, it->second);
-                }
-            }
-            if(cur->children.find(pattern[ind]) != cur->children.end()){
-                match_pattern(pattern,out,ind + 1,cur->children[pattern[ind]]);    
-            }
-        }
-        void print_words(Node* nv = nullptr,string cur_str = ""){
-            if(nv == nullptr) nv = root;
-            cur_str.push_back(nv->c);
-            if(nv->children.size() == 0){
-                cout<<cur_str<<endl;
-                return;
-            }
-            for(auto it = nv->children.begin();it != nv->children.end();it++){
-                print_words(it->second,cur_str);
-            }
-            cur_str.pop_back();
+            reverse(ans.begin(),ans.end());
+            out.push_back({ans,f});
             return;
         }
-        long long number_of_nodes(Node* nv = nullptr){
-            if(nv == nullptr) nv = root;
-            if(nv->children.size() == 0) return 1;
-            long long ans = 0;
-            for(auto it = nv->children.begin();it != nv->children.end();it++){
-                ans += number_of_nodes(it->second);
+        if(ind == pattern.size()) return; //no match
+        if(pattern[ind] == '.'){ //resolve wildcard character
+            for(auto it = cur->children.begin();it != cur->children.end();it++){
+                o_match_pattern(pattern,out,ind + 1, it->second);
             }
-            return ans;
         }
-        void _serialize(ostream &os, Node* nv = nullptr){
-            if(nv == nullptr) nv = root;
-            os<<nv->c<<" ";
-            if(nv->c == '$') os<<nv->freq<<" ";
-            for(auto it = nv->children.begin();it != nv->children.end();it++){
-                _serialize(os,it->second);
+        if(cur->children.find(pattern[ind]) != cur->children.end()){
+            o_match_pattern(pattern,out,ind + 1,cur->children[pattern[ind]]);    
+        }
+    }
+    void advance(char next,vector<Node*>& cur){
+        vector<Node*> out;
+        for(auto i : cur){
+            if(next == '.'){
+                for(auto j : i->children) out.push_back(j.second);
+            }else if(i->children.find(next) != i->children.end()){
+                out.push_back(i->children.find(next)->second);
             }
-            os<<"# ";
         }
-        void serialize(string out){
-            ofstream os(out);
-            _serialize(os);
-            os<<endl;
-            os.close();
+        cur = out;
+    }
+    void match_pattern(string pattern,vector<Node*>& cur){
+        cur.push_back(this->root);
+        for(auto i : pattern){
+            advance(i,cur);
         }
-        void deserialize(string dump){
-            ifstream in;
-            in.open(dump);
-            while(!in.is_open()){
-                cout<<"Could not open wordlist. Enter path to trie.dump file: ";
-                string path;
-                if(path == "q") return;
-                cin>>path;
-                in.open(path);
+    }
+    string get_word(Node* cur){
+        string out(cur->depth+1,' ');
+        while(cur != nullptr){
+            out[cur->depth] = cur->c;
+            cur = cur->parent;
+        }
+        return out.substr(1,out.size()-2);
+    }
+    //vector<Node*> parse(string pattern){ //TODO tokenizacia
+        //vector<Node*> out{this->root};
+        //vector<pair<int,string>> tokenized = tokenize(pattern);
+        //for(auto i : tokenized){
+            //functions[i.first](i.second,out);
+        //}
+        //return out;
+    //}
+    void print_words(Node* nv = nullptr,string cur_str = ""){
+        if(nv == nullptr) nv = root;
+        cur_str.push_back(nv->c);
+        if(nv->children.size() == 0){
+            cout<<cur_str<<endl;
+            return;
+        }
+        for(auto it = nv->children.begin();it != nv->children.end();it++){
+            print_words(it->second,cur_str);
+        }
+        cur_str.pop_back();
+        return;
+    }
+    long long number_of_nodes(Node* nv = nullptr){
+        if(nv == nullptr) nv = root;
+        if(nv->children.size() == 0) return 1;
+        long long ans = 0;
+        for(auto it = nv->children.begin();it != nv->children.end();it++){
+            ans += number_of_nodes(it->second);
+        }
+        return ans;
+    }
+    void serialize(ostream &os, Node* nv = nullptr){
+        if(nv == nullptr) nv = root;
+        os<<nv->c<<" ";
+        if(nv->c == '$') os<<nv->freq<<" ";
+        for(auto it = nv->children.begin();it != nv->children.end();it++){
+            serialize(os,it->second);
+        }
+        os<<"# ";
+    }
+    void serialize(string out){
+        ofstream os(out);
+        serialize(os);
+        os<<endl;
+        os.close();
+    }
+    void deserialize(string dump){
+        auto begin = chrono::high_resolution_clock::now();
+        ifstream in;
+        in.open(dump);
+        while(!in.is_open()){
+            cout<<"Could not open wordlist. Enter path to trie.dump file: ";
+            string path;
+            if(path == "q") return;
+            cin>>path;
+            in.open(path);
+        }
+        Node* nv = root;
+        char c;in>>c;
+        int freq;
+        while(nv != nullptr){
+            in>>c;
+            if(c == '#') nv = nv->parent;
+            else{
+                nv = nv->add_child(c);
+                if(c == '$'){in>>freq;nv->freq = freq;}
             }
-            Node* nv = root;
-            char c;in>>c;
-            int freq;
-            while(nv != nullptr){
-                in>>c;
-                if(c == '#') nv = nv->parent;
-                else{
-                    nv = nv->add_child(c);
-                    if(c == '$'){in>>freq;nv->freq = freq;}
-                }
-            }
-            cout<<"Wordlist loaded succesfully!"<<endl;
-            in.close();
         }
+        auto end = chrono::high_resolution_clock::now();
+        auto elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
+        cout<<"Wordlist loaded succesfully in "<<elapsed.count()<<"ms!"<<endl;
+        in.close();
+    }
 };
 
 Trie tr = Trie();
 
 bool comp(pair<string,int> a,pair<string,int> b){
     return a.second > b.second || (a.second == b.second && a.first > b.first);
+}
+bool comp1(Node* a,Node* b){
+    return a->freq > b->freq;
+}
+
+void benchmark(string a){
+    auto begin = chrono::high_resolution_clock::now();
+    vector<Node*> ans;
+    tr.match_pattern(a,ans);
+    for(auto i : ans) tr.get_word(i);
+    auto end = chrono::high_resolution_clock::now();
+    auto elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
+    cout<<"New time: "<<elapsed.count()<<"ms"<<endl;
+    
+    begin = chrono::high_resolution_clock::now();
+    vector<pair<string,int>> o_ans;
+    tr.o_match_pattern(a,o_ans);
+    end = chrono::high_resolution_clock::now();
+    elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
+    cout<<"Old time: "<<elapsed.count()<<"ms"<<endl;
 }
 
 void manual_inp(){
@@ -153,14 +218,14 @@ void manual_inp(){
             tr.add_string(co,f);
         }else if(id == '?'){
             cin>>co;
-            vector<pair<string,int>> ans;
             co += '$';
+            vector<Node*> ans;
             tr.match_pattern(co,ans);
-            sort(ans.begin(),ans.end(),comp);
+            sort(ans.begin(),ans.end(),comp1);
             int ind = 0;
             while(ind < ans.size()){
                 for(int cnt = 0;cnt <= 31 && ind < ans.size();cnt++,ind++){
-                    cout<<ans[ind].first<<endl;
+                    cout<<tr.get_word(ans[ind])<<endl;
                 }
                 if(ind == ans.size()) break;
                 cout<<"Show more results? [y/n] ";
@@ -168,11 +233,16 @@ void manual_inp(){
                 if(a != "y" && a != "Y") break;
             }
         }else if(id == 'd') tr.print_words();
+        else if(id == 'b'){
+            string a;cin>>a;
+            benchmark(a);
+        }
         else break;
     };
 }
 
 void load_wordlist(string file){
+    auto begin = chrono::high_resolution_clock::now();
     ifstream wl;
     wl.open(file);
     if(!wl.is_open()){
@@ -187,6 +257,9 @@ void load_wordlist(string file){
         tr.add_string(word,freq);
     }
     wl.close();
+    auto end = chrono::high_resolution_clock::now();
+    auto elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
+    cout<<"Wordlist loaded in "<<elapsed.count()<<"ms"<<endl;
 }
 
 int main(){
