@@ -7,6 +7,7 @@
 #include<chrono>
 
 //TODO
+//tokenizacia
 //permutacie
 //lubovolny zo setu
 //cisla na n-nasobok zatvorky
@@ -97,6 +98,17 @@ struct Trie{
         for(auto i : pattern){
             advance(i,cur);
         }
+    }
+    void from_set(string pattern, vector<Node*>& cur){
+        vector<Node*> out;
+        for(char i : pattern){
+            for(auto j : cur){
+                out.push_back(j->children.find(i)->second);
+            }
+        }
+        cur = out;
+    }
+    void permute(string pattern, vector<Node*>&cur){
     }
     string get_word(Node* cur){
         string out(cur->depth+1,' ');
