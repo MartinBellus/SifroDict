@@ -9,12 +9,12 @@
 //TODO
 //tokenizacia
 //permutacie
-//lubovolny zo setu
 //cisla na n-nasobok zatvorky
+//jeden zo setu obcas nefunguje 31332
+//  outputuje to aj jednopismenove odpovede
 
 using namespace std;
 
-map<char,char> matching{{'(',')'},{'{','}'},{'[',']'},{'<','>'}};
 
 struct Node{
     map<char,Node*> children;
@@ -35,10 +35,16 @@ struct Node{
     }
 };
 
+typedef vector<Node*> type_OUTPUT;
+
 struct Trie{
     Node* root;
+    vector<string> morse{"","et","ianm","surwdkgo","hvflpjbxcyzq"};
+    map<char,int> matching{{'(',1},{')',1},{'{',2},{'}',2},{'[',3},{']',3},{'<',4},{'>',4}};
+    vector<void(Trie::*)(string,type_OUTPUT&)> functions;
     Trie(){
         root = new Node(':');
+        functions = {&this->from_set,&this->permute};
     }
     void add_string(string s,int f, Node* cur = nullptr){
         if(find(s)) return;
@@ -58,7 +64,7 @@ struct Trie{
         }
         return 0;
     }
-    void o_match_pattern(string pattern,vector<pair<string,int>>& out,int ind = 0,Node* cur = nullptr){
+    void o_dfs_match_pattern(string pattern,vector<pair<string,int>>& out,int ind = 0,Node* cur = nullptr){
         if(cur == nullptr) cur = root;
         if(cur->c == '$' && ind == pattern.size()){ //match
             int f = cur->freq;
@@ -75,15 +81,15 @@ struct Trie{
         if(ind == pattern.size()) return; //no match
         if(pattern[ind] == '.'){ //resolve wildcard character
             for(auto it = cur->children.begin();it != cur->children.end();it++){
-                o_match_pattern(pattern,out,ind + 1, it->second);
+                o_dfs_match_pattern(pattern,out,ind + 1, it->second);
             }
         }
         if(cur->children.find(pattern[ind]) != cur->children.end()){
-            o_match_pattern(pattern,out,ind + 1,cur->children[pattern[ind]]);    
+            o_dfs_match_pattern(pattern,out,ind + 1,cur->children[pattern[ind]]);    
         }
     }
-    void advance(char next,vector<Node*>& cur){
-        vector<Node*> out;
+    void advance(char next,type_OUTPUT& cur){
+        type_OUTPUT out;
         for(auto i : cur){
             if(next == '.'){
                 for(auto j : i->children) out.push_back(j.second);
@@ -93,14 +99,8 @@ struct Trie{
         }
         cur = out;
     }
-    void match_pattern(string pattern,vector<Node*>& cur){
-        cur.push_back(this->root);
-        for(auto i : pattern){
-            advance(i,cur);
-        }
-    }
-    void from_set(string pattern, vector<Node*>& cur){
-        vector<Node*> out;
+    void from_set(string pattern, type_OUTPUT& cur){
+        type_OUTPUT out;
         for(char i : pattern){
             for(auto j : cur){
                 out.push_back(j->children.find(i)->second);
@@ -108,7 +108,7 @@ struct Trie{
         }
         cur = out;
     }
-    void permute(string pattern, vector<Node*>&cur){
+    void permute(string pattern, type_OUTPUT&cur){
     }
     string get_word(Node* cur){
         string out(cur->depth+1,' ');
@@ -118,14 +118,29 @@ struct Trie{
         }
         return out.substr(1,out.size()-2);
     }
-    //vector<Node*> parse(string pattern){ //TODO tokenizacia
-        //vector<Node*> out{this->root};
-        //vector<pair<int,string>> tokenized = tokenize(pattern);
-        //for(auto i : tokenized){
-            //functions[i.first](i.second,out);
-        //}
-        //return out;
-    //}
+    void match_pattern(string pattern,type_OUTPUT& out){ //TODO tokenizacia
+        out.push_back(this->root);
+        int mode = 0;
+        string tmp;
+        for(char i : pattern){
+            if(mode){
+                if(matching.find(i) != matching.end()){
+                    (this->*functions[mode-1])(tmp,out);
+                    mode = 0;
+                    tmp = "";
+                }else{
+                    tmp += i;
+                }
+            }else if((i<='z' && i >= 'a') || i == '.' || i == '$'){
+                advance(i,out);
+            }else if(i <= '4' && i >= '1'){
+                cout<<i-'0'<<endl;
+                from_set(morse[i-'0'],out);
+            }else if(matching.find(i) != matching.end()){
+                mode = matching[i];
+            }
+        }
+    }
     void print_words(Node* nv = nullptr,string cur_str = ""){
         if(nv == nullptr) nv = root;
         cur_str.push_back(nv->c);
@@ -203,7 +218,7 @@ bool comp1(Node* a,Node* b){
 
 void benchmark(string a){
     auto begin = chrono::high_resolution_clock::now();
-    vector<Node*> ans;
+    type_OUTPUT ans;
     tr.match_pattern(a,ans);
     for(auto i : ans) tr.get_word(i);
     auto end = chrono::high_resolution_clock::now();
@@ -212,7 +227,7 @@ void benchmark(string a){
     
     begin = chrono::high_resolution_clock::now();
     vector<pair<string,int>> o_ans;
-    tr.o_match_pattern(a,o_ans);
+    tr.o_dfs_match_pattern(a,o_ans);
     end = chrono::high_resolution_clock::now();
     elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
     cout<<"Old time: "<<elapsed.count()<<"ms"<<endl;
@@ -231,7 +246,7 @@ void manual_inp(){
         }else if(id == '?'){
             cin>>co;
             co += '$';
-            vector<Node*> ans;
+            type_OUTPUT ans;
             tr.match_pattern(co,ans);
             sort(ans.begin(),ans.end(),comp1);
             int ind = 0;
