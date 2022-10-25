@@ -10,8 +10,6 @@
 //tokenizacia
 //permutacie
 //cisla na n-nasobok zatvorky
-//jeden zo setu obcas nefunguje 31332
-//  outputuje to aj jednopismenove odpovede
 
 using namespace std;
 
@@ -103,7 +101,7 @@ struct Trie{
         type_OUTPUT out;
         for(char i : pattern){
             for(auto j : cur){
-                out.push_back(j->children.find(i)->second);
+                if(j->children.find(i) != j->children.end()) out.push_back(j->children.find(i)->second);
             }
         }
         cur = out;
@@ -134,7 +132,6 @@ struct Trie{
             }else if((i<='z' && i >= 'a') || i == '.' || i == '$'){
                 advance(i,out);
             }else if(i <= '4' && i >= '1'){
-                cout<<i-'0'<<endl;
                 from_set(morse[i-'0'],out);
             }else if(matching.find(i) != matching.end()){
                 mode = matching[i];
