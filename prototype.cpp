@@ -6,12 +6,9 @@
 #include<fstream>
 #include<chrono>
 
-//TODO
-//tokenizacia
-//permutacie
-//cisla na n-nasobok zatvorky
-
 using namespace std;
+
+int print_cap = 31;
 
 struct Node{
     map<char,Node*> children;
@@ -61,30 +58,6 @@ struct Trie{
         }
         return 0;
     }
-    void o_dfs_match_pattern(string pattern,vector<pair<string,int>>& out,int ind = 0,Node* cur = nullptr){
-        if(cur == nullptr) cur = root;
-        if(cur->c == '$' && ind == pattern.size()){ //match
-            int f = cur->freq;
-            string ans = "";
-            cur = cur->parent;
-            while(cur->parent != nullptr){
-                ans += cur->c;
-                cur = cur->parent;
-            }
-            reverse(ans.begin(),ans.end());
-            out.push_back({ans,f});
-            return;
-        }
-        if(ind == pattern.size()) return; //no match
-        if(pattern[ind] == '.'){ //resolve wildcard character
-            for(auto it = cur->children.begin();it != cur->children.end();it++){
-                o_dfs_match_pattern(pattern,out,ind + 1, it->second);
-            }
-        }
-        if(cur->children.find(pattern[ind]) != cur->children.end()){
-            o_dfs_match_pattern(pattern,out,ind + 1,cur->children[pattern[ind]]);    
-        }
-    }
     void advance(char next,type_OUTPUT& cur){
         type_OUTPUT out;
         for(auto i : cur){
@@ -105,8 +78,6 @@ struct Trie{
         }
         cur = out;
     }
-    void permute(string pattern, type_OUTPUT&cur){
-    }
     string get_word(Node* cur){
         string out(cur->depth+1,' ');
         while(cur != nullptr){
@@ -115,7 +86,7 @@ struct Trie{
         }
         return out.substr(1,out.size()-2);
     }
-    void match_pattern(string pattern,type_OUTPUT& out){ //TODO tokenizacia
+    void match_pattern(string pattern,type_OUTPUT& out){
         out.push_back(this->root);
         int mode = 0;
         string tmp;
@@ -136,28 +107,6 @@ struct Trie{
                 mode = matching[i];
             }
         }
-    }
-    void print_words(Node* nv = nullptr,string cur_str = ""){
-        if(nv == nullptr) nv = root;
-        cur_str.push_back(nv->c);
-        if(nv->children.size() == 0){
-            cout<<cur_str<<endl;
-            return;
-        }
-        for(auto it = nv->children.begin();it != nv->children.end();it++){
-            print_words(it->second,cur_str);
-        }
-        cur_str.pop_back();
-        return;
-    }
-    long long number_of_nodes(Node* nv = nullptr){
-        if(nv == nullptr) nv = root;
-        if(nv->children.size() == 0) return 1;
-        long long ans = 0;
-        for(auto it = nv->children.begin();it != nv->children.end();it++){
-            ans += number_of_nodes(it->second);
-        }
-        return ans;
     }
     void serialize(ostream &os, Node* nv = nullptr){
         if(nv == nullptr) nv = root;
@@ -205,28 +154,8 @@ struct Trie{
 
 Trie tr = Trie();
 
-bool comp(pair<string,int> a,pair<string,int> b){
-    return a.second > b.second || (a.second == b.second && a.first > b.first);
-}
 bool comp1(Node* a,Node* b){
     return a->freq > b->freq;
-}
-
-void benchmark(string a){
-    auto begin = chrono::high_resolution_clock::now();
-    type_OUTPUT ans;
-    tr.match_pattern(a,ans);
-    for(auto i : ans) tr.get_word(i);
-    auto end = chrono::high_resolution_clock::now();
-    auto elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
-    cout<<"New time: "<<elapsed.count()<<"ms"<<endl;
-    
-    begin = chrono::high_resolution_clock::now();
-    vector<pair<string,int>> o_ans;
-    tr.o_dfs_match_pattern(a,o_ans);
-    end = chrono::high_resolution_clock::now();
-    elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
-    cout<<"Old time: "<<elapsed.count()<<"ms"<<endl;
 }
 
 void manual_inp(){
@@ -242,7 +171,7 @@ void manual_inp(){
             sort(ans.begin(),ans.end(),comp1);
             int ind = 0;
             while(ind < ans.size()){
-                for(int cnt = 0;cnt <= 31 && ind < ans.size();cnt++,ind++){
+                for(int cnt = 0;cnt <= print_cap && ind < ans.size();cnt++,ind++){
                     cout<<tr.get_word(ans[ind])<<endl;
                 }
                 if(ind == ans.size()) break;
@@ -250,11 +179,6 @@ void manual_inp(){
                 string a;cin>>a;
                 if(a != "y" && a != "Y") break;
             }
-        }else if(id == 'd') tr.print_words();
-        else if(id == 'b'){
-            string a;cin>>a;
-            benchmark(a);
-        }
         else break;
     };
 }
