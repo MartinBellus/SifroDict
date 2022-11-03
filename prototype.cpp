@@ -38,7 +38,7 @@ struct Trie{
     vector<void(Trie::*)(string,type_OUTPUT&)> functions;
     Trie(){
         root = new Node(':');
-        functions = {&this->from_set,&this->permute};
+        functions = {&this->from_set};
     }
     void add_string(string s,int f, Node* cur = nullptr){
         if(find(s)) return;
@@ -179,7 +179,7 @@ void manual_inp(){
                 string a;cin>>a;
                 if(a != "y" && a != "Y") break;
             }
-        else break;
+        }else break;
     };
 }
 
