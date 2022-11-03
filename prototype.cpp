@@ -13,7 +13,6 @@
 
 using namespace std;
 
-
 struct Node{
     map<char,Node*> children;
     Node* parent;
@@ -235,12 +234,7 @@ void manual_inp(){
     string co;
     while(1){
         cin>>id;
-        if(id == '+'){
-            int f;
-            cin>>co>>f;
-            co += '$';
-            tr.add_string(co,f);
-        }else if(id == '?'){
+        if(id == '?'){
             cin>>co;
             co += '$';
             type_OUTPUT ans;
@@ -285,11 +279,7 @@ void load_wordlist(string file){
     auto elapsed = chrono::duration_cast<chrono::milliseconds>(end-begin);
     cout<<"Wordlist loaded in "<<elapsed.count()<<"ms"<<endl;
 }
-
 int main(){
-    //load_wordlist("sk_parsed.txt");
     tr.deserialize("trie.dump");
-    //cout<<tr.number_of_nodes()<<endl;
-    //tr.serialize("trie.dump");
     manual_inp();
 }
