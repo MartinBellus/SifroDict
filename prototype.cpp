@@ -7,7 +7,6 @@
 #include<chrono>
 
 //TODO
-//tokenizacia
 //permutacie
 //cisla na n-nasobok zatvorky
 
