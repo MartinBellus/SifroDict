@@ -279,6 +279,6 @@ void load_wordlist(string file){
     cout<<"Wordlist loaded in "<<elapsed.count()<<"ms"<<endl;
 }
 int main(){
-    tr.deserialize("trie.dump");
+    tr.deserialize((string) getenv("HOME") + "/.local/bin/trie.dump");
     manual_inp();
 }
