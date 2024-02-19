@@ -40,7 +40,7 @@ struct Trie{
     vector<void(Trie::*)(string,type_OUTPUT&)> functions;
     Trie(){
         root = new Node(':');
-        functions = {&this->from_set,&this->permute};
+        functions = {&Trie::from_set,&Trie::permute};
     }
     void add_string(string s,int f, Node* cur = nullptr){
         if(find(s)) return;
